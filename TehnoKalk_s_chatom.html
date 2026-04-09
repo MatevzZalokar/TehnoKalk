@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <!-- Nabor znakov UTF-8 za slovenščino -->
+  <meta charset="UTF-8">
+  <!-- Odzivni prikaz na mobilnih napravah -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Naslov zavihka v brskalniku -->
+  <title>TehnoKalk — Inženirski Kalkulator</title>
+  <!-- Google Fonts: Syne za naslove, DM Sans za besedilo, DM Mono za formule/kodo -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================
+       CSS SPREMENLJIVKE — barve in vrednosti za celotno stran
+    ============================================================ */
+    :root {
+      --bg:          #06080f;              /* Temno ozadje celotne strani */
+      --surface:     #0c1120;              /* Površina kartic */
+      --surface2:    #111827;              /* Nekoliko svetlejša površina */
+      --border:      #1f2d45;              /* Barva robov */
+      --border2:     #263550;              /* Svetlejši rob */
+      --blue:        #3b82f6;              /* Modra — elektrotehnika */
+      --blue-glow:   rgba(59,130,246,.15); /* Modri svetlobni odsev */
+      --orange:      #f97316;              /* Oranžna — mehanika */
+      --orange-glow: rgba(249,115,22,.15); /* Oranžni svetlobni odsev */
+      --green:       #10b981;              /* Zelena — rezultati */
+      --red:         #ef4444;              /* Rdeča — napake */
+      --text:        #e2e8f0;              /* Glavno besedilo */
+      --text2:       #94a3b8;              /* Sekundarno besedilo */
+      --text3:       #475569;              /* Tretja barva besedila */
+      --mono: 'DM Mono', monospace;        /* Pisava za formule */
+    }
+
+    /* Ponastavitev privzetih robov in odmikov brskalnika */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Gladko drsenje strani ob klikih na sidra */
+    html { scroll-behavior: smooth; }
+
+    /* Osnovna nastavitev celotnega telesa strani */
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden; /* Prepreči horizontalni drsnik */
+    }
+
+    /* Animirana mreža v ozadju — subtilna tehniška estetika */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,.04) 1px, transparent 1px);
+      background-size: 50px 50px; /* Velikost celice mreže */
+      pointer-events: none;       /* Ne moti klikov */
+      z-index: 0;
+    }
+
+    /* ============================================================
+       ANIMACIJE
+    ============================================================ */
+
+    /* Pojavljanje z dvigom od spodaj */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* Utripanje za aktivno piko */
+    @keyframes pulse {
+      0%,100% { opacity: 1;   }
+      50%      { opacity: 0.4; }
+    }
+
+    /* Lebdenje za dekorativne kartice */
+    @keyframes float {
+      0%,100% { transform: translateY(0)    rotate(0deg); }
+      50%      { transform: translateY(-20px) rotate(3deg); }
+    }
+
+    /* Sijaj za CTA gumb — gradient se premika */
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+
+    /* Animacija ob prikazu rezultata */
+    @keyframes countUp {
+      from { transform: scale(.9); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+
+    /* ============================================================
+       NAVIGACIJA — zgornja vrstica
+    ============================================================ */
+    nav {
+      position: fixed;         /* Vedno vidna */
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(6,8,15,.85);  /* Polprozorno ozadje */
+      backdrop-filter: blur(20px);   /* Zamegljeno ozadje za efekt stekla */
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Logotip v navigaciji */
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    /* Modri del logotipa */
+    .nav-logo span { color: var(--blue); }
+
+    /* Skupina gumbov desno v nav */
+    .nav-links { display: flex; gap: 8px; align-items: center; }
+
+    /* Gumb v navigaciji */
+    .nav-btn {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      text-decoration: none;
+    }
+    .nav-btn:hover { color: #fff; background: var(--surface2); border-color: var(--border2); }
+    /* Aktiven gumb — modra barva */
+    .nav-btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .nav-btn.primary:hover { background: #2563eb; }
+
+    /* ============================================================
+       LANDING STRAN
+    ============================================================ */
+    #landing {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 100px 20px 60px;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Svetlobni odsevi v ozadju landing strani */
+    .lg1 {
+      position: absolute; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,.12) 0%, transparent 70%);
+      top: -100px; left: -100px; pointer-events: none;
+    }
+    .lg2 {
+      position: absolute; width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(249,115,22,.08) 0%, transparent 70%);
+      bottom: 0; right: -100px; pointer-events: none;
+    }
+
+    /* Majhna značka nad naslovom */
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px;
+      background: rgba(59,130,246,.1);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: 100px;
+      font-family: var(--mono); font-size: .72rem;
+      color: var(--blue); letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 28px;
+      animation: fadeUp .6s ease both;
+    }
+    /* Zelena utripajoča pika v znački */
+    .bdot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    /* Glavni naslov */
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.6rem, 7vw, 5.2rem); /* Odzivna velikost */
+      font-weight: 900;
+      line-height: 1.05;
+      text-align: center;
+      color: #fff;
+      max-width: 860px;
+      animation: fadeUp .6s .1s ease both;
+    }
+    /* Gradient del naslova */
+    .hero-title .hl {
+      background: linear-gradient(135deg, var(--blue), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Podnaslov */
+    .hero-sub {
+      font-size: 1.1rem; color: var(--text2);
+      text-align: center; max-width: 540px;
+      line-height: 1.75; margin-top: 20px;
+      font-weight: 300;
+      animation: fadeUp .6s .2s ease both;
+    }
+
+    /* Skupina gumbov */
+    .hero-btns {
+      display: flex; gap: 14px; margin-top: 40px;
+      flex-wrap: wrap; justify-content: center;
+      animation: fadeUp .6s .3s ease both;
+    }
+
+    /* Primarni CTA gumb z animiranim sijanjem */
+    .btn-cta {
+      padding: 16px 36px; border-radius: 10px; border: none;
+      background: linear-gradient(90deg, var(--blue), #6366f1, var(--blue));
+      background-size: 200% auto;
+      color: #fff; font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 30px rgba(59,130,246,.3);
+      animation: shimmer 3s linear infinite;
+    }
+    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(59,130,246,.5); }
+
+    /* Sekundarni gumb */
+    .btn-sec {
+      padding: 16px 36px; border-radius: 10px;
+      border: 1px solid var(--border2);
+      background: var(--surface); color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 500; cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-sec:hover { border-color: var(--orange); color: var(--orange); }
+
+    /* Statistike pod gumbi */
+    .hero-stats {
+      display: flex; gap: 48px; margin-top: 64px;
+      animation: fadeUp .6s .4s ease both;
+    }
+    .stat { text-align: center; }
+    .stat-n {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800; color: #fff;
+    }
+    .stat-l { font-size: .8rem; color: var(--text3); margin-top: 4px; letter-spacing: 1px; }
+    .stat-div { width: 1px; background: var(--border); align-self: stretch; }
+
+    /* Lebdeče kartice z enačbami v ozadju */
+    .fcards { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .fc {
+      position: absolute;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 20px;
+      font-family: var(--mono); font-size: .82rem; color: var(--text3);
+      animation: float 6s ease-in-out infinite;
+    }
+    .fc b  { color: var(--blue);   }
+    .fc.o b{ color: var(--orange); }
+    /* Različne pozicije in zamude */
+    .fc:nth-child(1) { top: 15%;    left:  5%;  animation-delay: 0s;   }
+    .fc:nth-child(2) { top: 22%;    right: 6%;  animation-delay: 1s;   }
+    .fc:nth-child(3) { bottom: 22%; left:  8%;  animation-delay: 2s;   }
+    .fc:nth-child(4) { bottom: 14%; right: 5%;  animation-delay: 0.5s; }
+
+    /* ============================================================
+       KALKULATOR STRAN
+    ============================================================ */
+    #kalkulator {
+      display: none; /* Skrita — JS jo pokaže */
+      min-height: 100vh;
+      padding: 100px 0 60px;
+      position: relative; z-index: 1;
+    }
+
+    /* Centriran vsebnik */
+    .cc { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* Glava kalkulatorja */
+    .calc-hdr { margin-bottom: 32px; animation: fadeUp .5s ease both; }
+    .calc-hdr h2 { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; color: #fff; }
+    .calc-hdr p  { color: var(--text2); font-size: .95rem; margin-top: 6px; }
+
+    /* ============================================================
+       ZAVIHKI KATEGORIJ (Elektro / Mehanika)
+    ============================================================ */
+    .cat-tabs {
+      display: flex; gap: 6px; margin-bottom: 28px;
+      background: var(--surface); padding: 6px;
+      border-radius: 12px; border: 1px solid var(--border);
+      width: fit-content;
+    }
+
+    /* Gumb kategorije */
+    .ctab {
+      padding: 10px 24px; border-radius: 8px; border: none;
+      background: transparent; color: var(--text2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; font-weight: 600; cursor: pointer;
+      transition: all .2s; display: flex; align-items: center; gap: 8px;
+    }
+    /* Aktiven modri zavihek */
+    .ctab.active-blue  { background: var(--blue);   color: #fff; box-shadow: 0 0 20px rgba(59,130,246,.3); }
+    /* Aktiven oranžni zavihek */
+    .ctab.active-orange{ background: var(--orange); color: #fff; box-shadow: 0 0 20px rgba(249,115,22,.3); }
+    .ctab:not(.active-blue):not(.active-orange):hover { color: #fff; background: var(--surface2); }
+
+    /* ============================================================
+       ZAVIHKI FORMUL (posamezni kalkulatorji)
+    ============================================================ */
+    .ftabs {
+      display: flex; gap: 4px; margin-bottom: 32px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border); padding-bottom: 0;
+    }
+
+    /* Gumb zavihka formule */
+    .ftab {
+      padding: 10px 18px; border: none; background: transparent;
+      color: var(--text3); font-family: 'DM Sans', sans-serif;
+      font-size: .85rem; font-weight: 500; cursor: pointer;
+      transition: all .2s;
+      border-bottom: 2px solid transparent; /* Podčrtaj za aktiven */
+      margin-bottom: -1px; white-space: nowrap;
+    }
+    .ftab:hover { color: var(--text); }
+    .ftab.ab { color: var(--blue);   border-bottom-color: var(--blue);   } /* Aktiven modri */
+    .ftab.ao { color: var(--orange); border-bottom-color: var(--orange); } /* Aktiven oranžni */
+
+    /* Vsebina zavihka formule — skrij neaktivne */
+    .ftc { display: none; }
+    .ftc.active { display: block; }
+
+    /* ============================================================
+       KARTICA KALKULATORJA
+    ============================================================ */
+    .calc-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      max-width: 680px;
+      animation: fadeUp .4s ease both;
+    }
+
+    /* Glava kartice */
+    .cc-head {
+      padding: 24px 28px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 16px;
+    }
+
+    /* Ikona v glavi kartice */
+    .cc-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .ib { background: var(--blue-glow);   border: 1px solid rgba(59,130,246,.2); } /* Modra ikona */
+    .io { background: var(--orange-glow); border: 1px solid rgba(249,115,22,.2); } /* Oranžna ikona */
+
+    /* Naslov in formula v glavi kartice */
+    .cc-title   { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .cc-formula { font-family: var(--mono); font-size: .78rem; color: var(--text3); margin-top: 4px; }
+
+    /* Telo kartice */
+    .cc-body { padding: 28px; }
+
+    /* ============================================================
+       PREKLOPNIK SMERI FORMULE
+    ============================================================ */
+    .switcher { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+
+    /* Gumb smeri */
+    .sw {
+      padding: 8px 16px; border-radius: 8px;
+      border: 1px solid var(--border2);
+      background: transparent; color: var(--text2);
+      font-family: var(--mono); font-size: .78rem;
+      cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    /* Aktiven gumb — modra */
+    .sw.ab { background: var(--blue-glow);   border-color: rgba(59,130,246,.4); color: var(--blue);   }
+    /* Aktiven gumb — oranžna */
+    .sw.ao { background: var(--orange-glow); border-color: rgba(249,115,22,.4); color: var(--orange); }
+    .sw:hover:not(.ab):not(.ao) { border-color: var(--border2); color: var(--text); }
+
+    /* ============================================================
+       VNOSNA POLJA
+    ============================================================ */
+    .ig { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+
+    /* Oznaka vnosnega polja — fiksna širina za poravnavo */
+    .il { font-family: var(--mono); font-size: .79rem; color: var(--text2); width: 155px; flex-shrink: 0; }
+
+    /* Vnosno polje */
+    .if {
+      flex: 1; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 11px 14px; color: var(--text);
+      font-family: var(--mono); font-size: .88rem;
+      outline: none; transition: border-color .2s; min-width: 0;
+    }
+    .if:focus   { border-color: var(--blue);   } /* Modra meja pri fokusiranju */
+    .if.of:focus{ border-color: var(--orange); } /* Oranžna za mehaniko */
+    .if::placeholder { color: var(--text3); }
+
+    /* Oznaka enote */
+    .ub {
+      font-family: var(--mono); font-size: .75rem;
+      padding: 6px 12px; border-radius: 6px;
+      min-width: 52px; text-align: center; flex-shrink: 0;
+    }
+    .ub-b { background: var(--blue-glow);   color: var(--blue);   border: 1px solid rgba(59,130,246,.2); } /* Modra enota */
+    .ub-o { background: var(--orange-glow); color: var(--orange); border: 1px solid rgba(249,115,22,.2); } /* Oranžna enota */
+
+    /* ============================================================
+       GUMB ZA IZRAČUN
+    ============================================================ */
+    .cbtn {
+      width: 100%; padding: 13px; border-radius: 10px; border: none;
+      background: var(--blue); color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem; font-weight: 600; cursor: pointer;
+      transition: all .2s; margin-bottom: 16px; letter-spacing: .5px;
+    }
+    .cbtn:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(59,130,246,.3); }
+    /* Oranžen gumb za mehaniko */
+    .cbtn.o { background: var(--orange); }
+    .cbtn.o:hover { background: #ea6c08; box-shadow: 0 8px 25px rgba(249,115,22,.3); }
+
+    /* ============================================================
+       OKNO Z REZULTATOM
+    ============================================================ */
+    .rbox {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 54px; transition: border-color .3s;
+    }
+    /* Uspešen rezultat — zelena meja */
+    .rbox.ok  { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.04); }
+    /* Napaka — rdeča meja */
+    .rbox.err { border-color: rgba(239,68,68,.4);  background: rgba(239,68,68,.04); }
+
+    /* Oznaka "Rezultat" */
+    .rl { font-family: var(--mono); font-size: .75rem; color: var(--text3); }
+
+    /* Vrednost rezultata — zelena */
+    .rv {
+      font-family: var(--mono); font-size: 1.05rem; font-weight: 500;
+      color: var(--green); animation: countUp .3s ease;
+    }
+    /* Napaka — rdeča */
+    .rbox.err .rv { color: var(--red); }
+
+    /* Enota rezultata — siva */
+    .ru { font-family: var(--mono); font-size: .75rem; color: var(--text3); margin-left: 5px; }
+
+    /* ============================================================
+       INFO OPOMBA
+    ============================================================ */
+    .info {
+      margin-top: 16px; padding: 14px 16px;
+      background: rgba(59,130,246,.04);
+      border: 1px solid rgba(59,130,246,.1);
+      border-radius: 8px;
+      font-size: .82rem; color: var(--text3); line-height: 1.6;
+    }
+    .info.o { background: rgba(249,115,22,.04); border-color: rgba(249,115,22,.1); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 44px 24px; margin-top: 60px;
+    }
+    .fi {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+    }
+    /* Logotip v footerju */
+    .fl { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 900; color: #fff; }
+    .fl span { color: var(--blue); }
+
+    /* Avtor projekta — sredina footerja */
+    .fa { text-align: center; }
+    .fa-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; color: #fff; }
+    .fa-sub  { font-size: .78rem; color: var(--text3); margin-top: 3px; font-family: var(--mono); }
+
+    /* Desna stran footerja */
+    .fr { font-size: .78rem; color: var(--text3); text-align: right; font-family: var(--mono); line-height: 1.6; }
+
+    /* ============================================================
+       ODZIVNI DIZAJN — mobilni telefoni
+    ============================================================ */
+    @media (max-width: 640px) {
+      nav { padding: 14px 20px; }
+      .nav-links .nav-btn:not(.primary) { display: none; } /* Skrij sekundarne gumbe */
+      .hero-stats { gap: 24px; }
+      .stat-n { font-size: 1.5rem; }
+      .fcards { display: none; }          /* Skrij lebdeče kartice */
+      .il { width: 115px; font-size: .72rem; }
+      .cc-body { padding: 18px; }
+      .fi { flex-direction: column; align-items: center; text-align: center; }
+      .fr { text-align: center; }
+      .cat-tabs { width: 100%; }
+      .ctab { flex: 1; justify-content: center; font-size: .8rem; padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVIGACIJA
+============================================================ -->
+<nav>
+  <!-- Logotip — klik vrne na landing stran -->
+  <a class="nav-logo" onclick="showPage('landing')">Tehno<span>Kalk</span></a>
+  <div class="nav-links">
+    <!-- Gumb za direkten skok na elektro zavihek -->
+    <button class="nav-btn" onclick="showCalc('elektro')">⚡ Elektrotehnika</button>
+    <!-- Gumb za direkten skok na mehanika zavihek -->
+    <button class="nav-btn" onclick="showCalc('mehanika')">⚙️ Mehanika</button>
+    <!-- Primarni gumb za odprtje kalkulatorja -->
+    <button class="nav-btn primary" onclick="showPage('kalkulator')">Odpri kalkulator →</button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     LANDING STRAN — prva stran za obiskovalce
+============================================================ -->
+<div id="landing">
+  <!-- Ozadjeni svetlobni odsevi -->
+  <div class="lg1"></div>
+  <div class="lg2"></div>
+
+  <!-- Lebdeče kartice z enačbami v ozadju -->
+  <div class="fcards">
+    <div class="fc"><b>U</b> = R · I</div>
+    <div class="fc o"><b>F</b> = m · a</div>
+    <div class="fc"><b>P</b> = U · I</div>
+    <div class="fc o"><b>E_k</b> = ½mv²</div>
+  </div>
+
+  <!-- Majhna značka -->
+  <div class="badge">
+    <div class="bdot"></div>
+    🇸🇮 &nbsp;#1 slovenski inženirski kalkulator
+  </div>
+
+  <!-- Glavni naslov -->
+  <h1 class="hero-title">
+    Prvi slovenski<br>
+    <span class="hl">online kalkulator</span><br>
+    za elektrotehniko in mehaniko
+  </h1>
+
+  <!-- Podnaslov -->
+  <p class="hero-sub">
+    Reši katero koli formulo iz elektrotehnike ali mehanike v sekundah.
+    Brezplačno, brez registracije — direktno v brskalniku.
+  </p>
+
+  <!-- Gumbi za dejanje -->
+  <div class="hero-btns">
+    <button class="btn-cta" onclick="showCalc('elektro')">⚡ Začni z elektrotehniko</button>
+    <button class="btn-sec"  onclick="showCalc('mehanika')">⚙️ Mehanika</button>
+  </div>
+
+  <!-- Statistike -->
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-n">15+</div><div class="stat-l">Formul</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">2</div><div class="stat-l">Področji</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">100%</div><div class="stat-l">Brezplačno</div></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     KALKULATOR STRAN
+============================================================ -->
+<div id="kalkulator">
+  <div class="cc">
+
+    <!-- Glava sekcije -->
+    <div class="calc-hdr">
+      <h2>Inženirski Kalkulator</h2>
+      <p>Izberi področje in formulo, ki jo potrebuješ.</p>
+    </div>
+
+    <!-- Zavihki kategorij -->
+    <div class="cat-tabs">
+      <button class="ctab active-blue"  id="ct-e" onclick="switchCat('e')">⚡ Elektrotehnika</button>
+      <button class="ctab"              id="ct-m" onclick="switchCat('m')">⚙️ Mehanika</button>
+    </div>
+
+    <!-- ==================================================
+         ELEKTROTEHNIKA
+    ================================================== -->
+    <div id="cc-e">
+      <!-- Zavihki posameznih formul -->
+      <div class="ftabs" id="ft-e">
+        <button class="ftab ab" onclick="switchF('e','ohm',this)">Ohmov zakon</button>
+        <button class="ftab"    onclick="switchF('e','moc',this)">Električna moč</button>
+        <button class="ftab"    onclick="switchF('e','zap',this)">Zaporedna vezava</button>
+        <button class="ftab"    onclick="switchF('e','vzp',this)">Vzporedna vezava</button>
+        <button class="ftab"    onclick="switchF('e','kond',this)">Kondenzator</button>
+        <button class="ftab"    onclick="switchF('e','tul',this)">Tuljava</button>
+        <button class="ftab"    onclick="switchF('e','kcl',this)">KCL — Toki</button>
+        <button class="ftab"    onclick="switchF('e','kvl',this)">KVL — Napetosti</button>
+      </div>
+
+      <!-- Ohmov zakon -->
+      <div class="ftc active" id="e-ohm">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">⚡</div>
+            <div>
+              <div class="cc-title">Ohmov zakon</div>
+              <div class="cc-formula">U = R · I &nbsp;|&nbsp; R = U / I &nbsp;|&nbsp; I = U / R</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <!-- Preklopnik smeri formule -->
+            <div class="switcher">
+              <button class="sw ab" onclick="ohmSw('U',this)">Izračunaj U [V]</button>
+              <button class="sw"    onclick="ohmSw('R',this)">Izračunaj R [Ω]</button>
+              <button class="sw"    onclick="ohmSw('I',this)">Izračunaj I [A]</button>
+            </div>
+            <!-- Dinamična vnosna polja (polnijo jih JS funkcije) -->
+            <div id="ohm-in"></div>
+            <button class="cbtn" onclick="calcOhm()">Izračunaj</button>
+            <!-- Okno z rezultatom -->
+            <div class="rbox" id="ohm-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">Ohmov zakon opisuje razmerje med napetostjo, tokom in upornostjo.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Električna moč -->
+      <div class="ftc" id="e-moc">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">💡</div>
+            <div>
+              <div class="cc-title">Električna moč</div>
+              <div class="cc-formula">P = U·I &nbsp;|&nbsp; P = U²/R &nbsp;|&nbsp; P = I²·R</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ab" onclick="mocSw('UI',this)">P = U · I</button>
+              <button class="sw"    onclick="mocSw('U2R',this)">P = U² / R</button>
+              <button class="sw"    onclick="mocSw('I2R',this)">P = I² · R</button>
+            </div>
+            <div id="moc-in"></div>
+            <button class="cbtn" onclick="calcMoc()">Izračunaj</button>
+            <div class="rbox" id="moc-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">Električna moč pove, koliko energije naprava porablja vsako sekundo.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zaporedna vezava -->
+      <div class="ftc" id="e-zap">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">🔗</div>
+            <div>
+              <div class="cc-title">Zaporedna vezava uporov</div>
+              <div class="cc-formula">R = R₁ + R₂ + R₃ + R₄</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <!-- Statična vnosna polja — formula gre samo v eno smer -->
+            <div class="ig"><span class="il">Upor R₁</span><input class="if" id="zap-1" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <div class="ig"><span class="il">Upor R₂</span><input class="if" id="zap-2" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <div class="ig"><span class="il">R₃ (neobvezno)</span><input class="if" id="zap-3" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <div class="ig" style="margin-bottom:20px"><span class="il">R₄ (neobvezno)</span><input class="if" id="zap-4" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <button class="cbtn" onclick="calcZap()">Izračunaj skupni upor</button>
+            <div class="rbox" id="zap-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">Pri zaporedni vezavi se vsi upori seštejejo. Tok skozi vse je enak.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vzporedna vezava -->
+      <div class="ftc" id="e-vzp">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">⫠</div>
+            <div>
+              <div class="cc-title">Vzporedna vezava uporov</div>
+              <div class="cc-formula">1/R = 1/R₁ + 1/R₂ + 1/R₃ + 1/R₄</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="ig"><span class="il">Upor R₁</span><input class="if" id="vzp-1" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <div class="ig"><span class="il">Upor R₂</span><input class="if" id="vzp-2" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <div class="ig"><span class="il">R₃ (neobvezno)</span><input class="if" id="vzp-3" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <div class="ig" style="margin-bottom:20px"><span class="il">R₄ (neobvezno)</span><input class="if" id="vzp-4" type="number" placeholder="Ω"><span class="ub ub-b">Ω</span></div>
+            <button class="cbtn" onclick="calcVzp()">Izračunaj skupni upor</button>
+            <div class="rbox" id="vzp-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">Pri vzporedni vezavi je skupni upor vedno manjši od najmanjšega posameznega.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kondenzator -->
+      <div class="ftc" id="e-kond">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">🔋</div>
+            <div>
+              <div class="cc-title">Kondenzator</div>
+              <div class="cc-formula">Q = C·U &nbsp;|&nbsp; E = ½·C·U² &nbsp;|&nbsp; X_C = 1/(2πfC)</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ab" onclick="kondSw('Q',this)">Naboj Q [C]</button>
+              <button class="sw"    onclick="kondSw('E',this)">Energija E [J]</button>
+              <button class="sw"    onclick="kondSw('Xc',this)">Reaktanca X_C [Ω]</button>
+            </div>
+            <div id="kond-in"></div>
+            <button class="cbtn" onclick="calcKond()">Izračunaj</button>
+            <div class="rbox" id="kond-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">Kondenzator shranjuje električno energijo med dvema prevodnikoma.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tuljava -->
+      <div class="ftc" id="e-tul">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">🌀</div>
+            <div>
+              <div class="cc-title">Tuljava (induktor)</div>
+              <div class="cc-formula">E = ½·L·I² &nbsp;|&nbsp; X_L = 2π·f·L</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ab" onclick="tulSw('E',this)">Energija E [J]</button>
+              <button class="sw"    onclick="tulSw('Xl',this)">Reaktanca X_L [Ω]</button>
+            </div>
+            <div id="tul-in"></div>
+            <button class="cbtn" onclick="calcTul()">Izračunaj</button>
+            <div class="rbox" id="tul-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">Tuljava shranjuje energijo v magnetnem polju in upira se spremembi toka.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KCL -->
+      <div class="ftc" id="e-kcl">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">🔀</div>
+            <div>
+              <div class="cc-title">Kirchhoffov zakon tokov (KCL)</div>
+              <div class="cc-formula">I_x = I_vhod − I₁ − I₂</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="ig"><span class="il">Vhodni tok I_vhod</span><input class="if" id="kcl-in" type="number" placeholder="npr. 5"><span class="ub ub-b">A</span></div>
+            <div class="ig"><span class="il">Izhodni tok I₁</span><input class="if" id="kcl-i1" type="number" placeholder="npr. 2"><span class="ub ub-b">A</span></div>
+            <div class="ig" style="margin-bottom:20px"><span class="il">Izhodni tok I₂</span><input class="if" id="kcl-i2" type="number" placeholder="npr. 1.5"><span class="ub ub-b">A</span></div>
+            <button class="cbtn" onclick="calcKCL()">Izračunaj neznan tok</button>
+            <div class="rbox" id="kcl-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">KCL: Vsota vseh tokov v vozlišče je enaka vsoti tokov iz vozlišča.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KVL -->
+      <div class="ftc" id="e-kvl">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon ib">🔁</div>
+            <div>
+              <div class="cc-title">Kirchhoffov zakon napetosti (KVL)</div>
+              <div class="cc-formula">U_x = U_vir − U₁ − U₂</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="ig"><span class="il">Napetost vira U_vir</span><input class="if" id="kvl-in" type="number" placeholder="npr. 12"><span class="ub ub-b">V</span></div>
+            <div class="ig"><span class="il">Padec napetosti U₁</span><input class="if" id="kvl-u1" type="number" placeholder="npr. 4"><span class="ub ub-b">V</span></div>
+            <div class="ig" style="margin-bottom:20px"><span class="il">Padec napetosti U₂</span><input class="if" id="kvl-u2" type="number" placeholder="npr. 3"><span class="ub ub-b">V</span></div>
+            <button class="cbtn" onclick="calcKVL()">Izračunaj neznano napetost</button>
+            <div class="rbox" id="kvl-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info">KVL: Vsota vseh napetosti v zaprti zanki je enaka nič.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /cc-e -->
+
+    <!-- ==================================================
+         MEHANIKA
+    ================================================== -->
+    <div id="cc-m" style="display:none">
+      <!-- Zavihki mehanskih formul -->
+      <div class="ftabs" id="ft-m">
+        <button class="ftab ao" onclick="switchF('m','newton',this)">Newtonov zakon</button>
+        <button class="ftab"    onclick="switchF('m','navor',this)">Navor</button>
+        <button class="ftab"    onclick="switchF('m','kin',this)">Kinematika</button>
+        <button class="ftab"    onclick="switchF('m','pad',this)">Prosta padavina</button>
+        <button class="ftab"    onclick="switchF('m','ek',this)">Kinetična energija</button>
+        <button class="ftab"    onclick="switchF('m','ep',this)">Potencialna energija</button>
+      </div>
+
+      <!-- Newtonov 2. zakon -->
+      <div class="ftc active" id="m-newton">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon io">🎯</div>
+            <div>
+              <div class="cc-title">Newtonov 2. zakon</div>
+              <div class="cc-formula">F = m·a &nbsp;|&nbsp; m = F/a &nbsp;|&nbsp; a = F/m</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ao" onclick="newtSw('F',this)">Izračunaj F [N]</button>
+              <button class="sw"    onclick="newtSw('m',this)">Izračunaj m [kg]</button>
+              <button class="sw"    onclick="newtSw('a',this)">Izračunaj a [m/s²]</button>
+            </div>
+            <div id="newt-in"></div>
+            <button class="cbtn o" onclick="calcNewt()">Izračunaj</button>
+            <div class="rbox" id="newt-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info o">Sila je enaka produktu mase in pospeška. Osnova klasične mehanike.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navor -->
+      <div class="ftc" id="m-navor">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon io">🔧</div>
+            <div>
+              <div class="cc-title">Navor</div>
+              <div class="cc-formula">M = F·r &nbsp;|&nbsp; F = M/r &nbsp;|&nbsp; r = M/F</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ao" onclick="navorSw('M',this)">Izračunaj M [N·m]</button>
+              <button class="sw"    onclick="navorSw('F',this)">Izračunaj F [N]</button>
+              <button class="sw"    onclick="navorSw('r',this)">Izračunaj r [m]</button>
+            </div>
+            <div id="navor-in"></div>
+            <button class="cbtn o" onclick="calcNavor()">Izračunaj</button>
+            <div class="rbox" id="navor-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info o">Navor je rotacijski ekvivalent sile — opisuje zasučno učinkovanje.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kinematika -->
+      <div class="ftc" id="m-kin">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon io">🚀</div>
+            <div>
+              <div class="cc-title">Enakomerno pospešeno gibanje</div>
+              <div class="cc-formula">v = v₀+a·t &nbsp;|&nbsp; s = v₀t+½at² &nbsp;|&nbsp; a = (v−v₀)/t</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ao" onclick="kinSw('v',this)">Končna hitrost v</button>
+              <button class="sw"    onclick="kinSw('s',this)">Pot s [m]</button>
+              <button class="sw"    onclick="kinSw('a',this)">Pospešek a [m/s²]</button>
+            </div>
+            <div id="kin-in"></div>
+            <button class="cbtn o" onclick="calcKin()">Izračunaj</button>
+            <div class="rbox" id="kin-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info o">Opisuje gibanje telesa z enakomerno spremembo hitrosti v času.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prosta padavina -->
+      <div class="ftc" id="m-pad">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon io">⬇️</div>
+            <div>
+              <div class="cc-title">Prosta padavina</div>
+              <div class="cc-formula">h = ½·g·t² &nbsp;|&nbsp; v = g·t &nbsp;|&nbsp; t = √(2h/g)</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ao" onclick="padSw('h',this)">Višina h [m]</button>
+              <button class="sw"    onclick="padSw('v',this)">Hitrost v [m/s]</button>
+              <button class="sw"    onclick="padSw('t',this)">Čas t [s]</button>
+            </div>
+            <div id="pad-in"></div>
+            <button class="cbtn o" onclick="calcPad()">Izračunaj</button>
+            <div class="rbox" id="pad-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info o">Prosta padavina brez upora zraka. Gravitacijski pospešek g = 9.81 m/s².</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kinetična energija -->
+      <div class="ftc" id="m-ek">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon io">⚡</div>
+            <div>
+              <div class="cc-title">Kinetična energija</div>
+              <div class="cc-formula">E_k = ½mv² &nbsp;|&nbsp; v = √(2E/m) &nbsp;|&nbsp; m = 2E/v²</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ao" onclick="ekSw('Ek',this)">Izračunaj E_k [J]</button>
+              <button class="sw"    onclick="ekSw('v',this)">Izračunaj v [m/s]</button>
+              <button class="sw"    onclick="ekSw('m',this)">Izračunaj m [kg]</button>
+            </div>
+            <div id="ek-in"></div>
+            <button class="cbtn o" onclick="calcEk()">Izračunaj</button>
+            <div class="rbox" id="ek-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info o">Kinetična energija je energija gibanja — odvisa od mase in kvadrata hitrosti.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Potencialna energija -->
+      <div class="ftc" id="m-ep">
+        <div class="calc-card">
+          <div class="cc-head">
+            <div class="cc-icon io">🏔️</div>
+            <div>
+              <div class="cc-title">Potencialna energija</div>
+              <div class="cc-formula">E_p = m·g·h &nbsp;|&nbsp; h = E/(mg) &nbsp;|&nbsp; m = E/(gh)</div>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="switcher">
+              <button class="sw ao" onclick="epSw('Ep',this)">Izračunaj E_p [J]</button>
+              <button class="sw"    onclick="epSw('h',this)">Izračunaj h [m]</button>
+              <button class="sw"    onclick="epSw('m',this)">Izračunaj m [kg]</button>
+            </div>
+            <div id="ep-in"></div>
+            <button class="cbtn o" onclick="calcEp()">Izračunaj</button>
+            <div class="rbox" id="ep-r"><span class="rl">Rezultat</span><span class="rv" style="color:var(--text3)">—</span></div>
+            <div class="info o">Potencialna energija je shranjena energija lege, odvisna od višine.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /cc-m -->
+
+  </div><!-- /cc -->
+</div><!-- /kalkulator -->
+
+<!-- ============================================================
+     FOOTER — spodnji del strani z avtorjem
+============================================================ -->
+<footer>
+  <div class="fi">
+    <!-- Logotip na levi -->
+    <div class="fl">Tehno<span>Kalk</span></div>
+
+    <!-- Avtor projekta na sredini -->
+    <div class="fa">
+      <div class="fa-name">Matevž Zalokar</div>
+      <div class="fa-sub">Avtor &nbsp;·&nbsp; Maturitetni projekt &nbsp;·&nbsp; 2025</div>
+    </div>
+
+    <!-- Info na desni -->
+    <div class="fr">
+      Elektrotehnika &amp; Mehanika<br>
+      Prvi slovenski inženirski kalkulator
+    </div>
+  </div>
+</footer>
+
+
+<!-- ============================================================
+     JAVASCRIPT — vsa logika aplikacije
+============================================================ -->
+<script>
+
+  // ===========================================================
+  // GLOBALNO STANJE — spremenljivke za vsak kalkulator
+  // ===========================================================
+  let ohmMode  = 'U';   // Trenutna smer Ohmovega zakona
+  let mocMode  = 'UI';  // Trenutna varianta moči
+  let kondMode = 'Q';   // Trenutna varianta kondenzatorja
+  let tulMode  = 'E';   // Trenutna varianta tuljave
+  let newtMode = 'F';   // Trenutna smer Newtonovega zakona
+  let navorMode= 'M';   // Trenutna smer navora
+  let kinMode  = 'v';   // Trenutna varianta kinematike
+  let padMode  = 'h';   // Trenutna varianta proste padavine
+  let ekMode   = 'Ek';  // Trenutna varianta kinetične energije
+  let epMode   = 'Ep';  // Trenutna varianta potencialne energije
+
+  // ===========================================================
+  // NAVIGACIJA MED STRANMI
+  // ===========================================================
+
+  /**
+   * Pokaže bodisi landing bodisi kalkulator stran
+   * @param {string} p - 'landing' ali 'kalkulator'
+   */
+  function showPage(p) {
+    document.getElementById('landing').style.display    = p==='landing'    ? 'flex'  : 'none';
+    document.getElementById('kalkulator').style.display = p==='kalkulator' ? 'block' : 'none';
+  }
+
+  /**
+   * Odpre kalkulator in nastavi kategorijo (elektro ali mehanika)
+   * @param {string} cat - 'elektro' ali 'mehanika'
+   */
+  function showCalc(cat) {
+    showPage('kalkulator');       // Pokaži kalkulator stran
+    switchCat(cat==='elektro'?'e':'m'); // Nastavi kategorijo
+  }
+
+  // ===========================================================
+  // PREKLAPLJANJE KATEGORIJ IN ZAVIHKOV
+  // ===========================================================
+
+  /**
+   * Preklopi med elektro (e) in mehanika (m) kategorijo
+   * @param {string} c - 'e' ali 'm'
+   */
+  function switchCat(c) {
+    // Nastavi stil aktivnih gumbov
+    const ce = document.getElementById('ct-e');
+    const cm = document.getElementById('ct-m');
+    ce.className = 'ctab' + (c==='e' ? ' active-blue' : '');
+    cm.className = 'ctab' + (c==='m' ? ' active-orange' : '');
+
+    // Pokaži / skrij vsebino
+    document.getElementById('cc-e').style.display = c==='e' ? 'block' : 'none';
+    document.getElementById('cc-m').style.display = c==='m' ? 'block' : 'none';
+  }
+
+  /**
+   * Preklopi na posamezen zavihek formule
+   * @param {string} cat - 'e' ali 'm'
+   * @param {string} tab - ime zavihka npr. 'ohm', 'newton'
+   * @param {Element} btn - kliknjeni gumb
+   */
+  function switchF(cat, tab, btn) {
+    // Skrij vse vsebine v kategoriji
+    document.querySelectorAll(`#cc-${cat} .ftc`).forEach(el => el.classList.remove('active'));
+    // Deaktiviraj vse gumbe zavihkov
+    document.querySelectorAll(`#ft-${cat} .ftab`).forEach(el => el.classList.remove('ab','ao'));
+
+    // Pokaži izbrani zavihek
+    document.getElementById(`${cat==='e'?'e':'m'}-${tab}`).classList.add('active');
+    // Aktiviraj gumb z ustrezno barvo
+    btn.classList.add(cat==='e' ? 'ab' : 'ao');
+  }
+
+  // ===========================================================
+  // POMOŽNE FUNKCIJE
+  // ===========================================================
+
+  /** Prebere vrednost vnosnega polja po ID-ju */
+  function v(id) { return parseFloat(document.getElementById(id).value); }
+
+  /** Preveri ali so vse vrednosti veljavna števila (ne NaN) */
+  function ok(...vals) { return vals.every(x => !isNaN(x)); }
+
+  /** Formatira število — eksponentna oblika za zelo majhna/velika */
+  function fmt(n) {
+    if (Math.abs(n)<0.001 || Math.abs(n)>=1e6) return n.toExponential(4);
+    return parseFloat(n.toPrecision(6)).toString();
+  }
+
+  /**
+   * Prikaže rezultat v oknu
+   * @param {string} id    - ID .rbox elementa
+   * @param {string} val   - Vrednost rezultata
+   * @param {string} unit  - Enota (npr. 'V')
+   * @param {boolean} err  - Ali je napaka
+   */
+  function setR(id, val, unit, err=false) {
+    const b = document.getElementById(id);
+    b.className = 'rbox' + (err ? ' err' : ' ok');
+    b.innerHTML = `<span class="rl">Rezultat</span><span class="rv">${val}<span class="ru">${unit}</span></span>`;
+  }
+
+  /** Nastavi HTML vsebino za vnosna polja */
+  function setIn(id, html) { document.getElementById(id).innerHTML = html; }
+
+  /** Aktivira kliknjeni gumb v skupini preklopnika, deaktivira ostale */
+  function activSW(btn) {
+    btn.parentElement.querySelectorAll('.sw').forEach(b => b.classList.remove('ab','ao'));
+    btn.classList.add(btn.classList.contains('ao')||btn.parentElement.closest('.cbtn.o') ? 'ao' : 'ab');
+  }
+
+  /** Pametna aktivacija — glede na barvo gumba */
+  function actSW(btn, isOrange=false) {
+    btn.parentElement.querySelectorAll('.sw').forEach(b => b.classList.remove('ab','ao'));
+    btn.classList.add(isOrange ? 'ao' : 'ab');
+  }
+
+  // ===========================================================
+  // OHMOV ZAKON
+  // ===========================================================
+
+  /** Preklopi smer Ohmovega zakona in obnovi vnosna polja */
+  function ohmSw(mode, btn) {
+    ohmMode = mode; actSW(btn); setR('ohm-r','—',''); // Počisti rezultat
+
+    if (mode==='U') {
+      // Iščemo napetost — potrebujemo R in I
+      setIn('ohm-in', `
+        <div class="ig"><span class="il">Upor R</span><input class="if" id="oh-R" type="number" placeholder="npr. 100"><span class="ub ub-b">Ω</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Tok I</span><input class="if" id="oh-I" type="number" placeholder="npr. 0.5"><span class="ub ub-b">A</span></div>`);
+    } else if (mode==='R') {
+      // Iščemo upor — potrebujemo U in I
+      setIn('ohm-in', `
+        <div class="ig"><span class="il">Napetost U</span><input class="if" id="oh-U" type="number" placeholder="npr. 12"><span class="ub ub-b">V</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Tok I</span><input class="if" id="oh-I" type="number" placeholder="npr. 0.5"><span class="ub ub-b">A</span></div>`);
+    } else {
+      // Iščemo tok — potrebujemo U in R
+      setIn('ohm-in', `
+        <div class="ig"><span class="il">Napetost U</span><input class="if" id="oh-U" type="number" placeholder="npr. 12"><span class="ub ub-b">V</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Upor R</span><input class="if" id="oh-R" type="number" placeholder="npr. 100"><span class="ub ub-b">Ω</span></div>`);
+    }
+  }
+
+  /** Izračuna rezultat Ohmovega zakona */
+  function calcOhm() {
+    if (ohmMode==='U') {
+      const R=v('oh-R'), I=v('oh-I');
+      if (!ok(R,I)) return setR('ohm-r','Vnesi obe vrednosti!','',true);
+      setR('ohm-r', fmt(R*I), ' V');        // U = R · I
+    } else if (ohmMode==='R') {
+      const U=v('oh-U'), I=v('oh-I');
+      if (!ok(U,I)||I===0) return setR('ohm-r','Neveljavni podatki!','',true);
+      setR('ohm-r', fmt(U/I), ' Ω');        // R = U / I
+    } else {
+      const U=v('oh-U'), R=v('oh-R');
+      if (!ok(U,R)||R===0) return setR('ohm-r','Neveljavni podatki!','',true);
+      setR('ohm-r', fmt(U/R), ' A');         // I = U / R
+    }
+  }
+
+  // ===========================================================
+  // ELEKTRIČNA MOČ
+  // ===========================================================
+
+  /** Preklopi varianto moči */
+  function mocSw(mode, btn) {
+    mocMode = mode; actSW(btn); setR('moc-r','—','');
+
+    if (mode==='UI') {
+      setIn('moc-in', `
+        <div class="ig"><span class="il">Napetost U</span><input class="if" id="mo-U" type="number" placeholder="npr. 230"><span class="ub ub-b">V</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Tok I</span><input class="if" id="mo-I" type="number" placeholder="npr. 2"><span class="ub ub-b">A</span></div>`);
+    } else if (mode==='U2R') {
+      setIn('moc-in', `
+        <div class="ig"><span class="il">Napetost U</span><input class="if" id="mo-U" type="number" placeholder="npr. 230"><span class="ub ub-b">V</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Upor R</span><input class="if" id="mo-R" type="number" placeholder="npr. 50"><span class="ub ub-b">Ω</span></div>`);
+    } else {
+      setIn('moc-in', `
+        <div class="ig"><span class="il">Tok I</span><input class="if" id="mo-I" type="number" placeholder="npr. 2"><span class="ub ub-b">A</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Upor R</span><input class="if" id="mo-R" type="number" placeholder="npr. 50"><span class="ub ub-b">Ω</span></div>`);
+    }
+  }
+
+  /** Izračuna električno moč */
+  function calcMoc() {
+    if (mocMode==='UI') {
+      const U=v('mo-U'), I=v('mo-I');
+      if (!ok(U,I)) return setR('moc-r','Neveljavni podatki!','',true);
+      setR('moc-r', fmt(U*I), ' W');         // P = U · I
+    } else if (mocMode==='U2R') {
+      const U=v('mo-U'), R=v('mo-R');
+      if (!ok(U,R)||R===0) return setR('moc-r','Neveljavni podatki!','',true);
+      setR('moc-r', fmt(U*U/R), ' W');       // P = U² / R
+    } else {
+      const I=v('mo-I'), R=v('mo-R');
+      if (!ok(I,R)) return setR('moc-r','Neveljavni podatki!','',true);
+      setR('moc-r', fmt(I*I*R), ' W');       // P = I² · R
+    }
+  }
+
+  // ===========================================================
+  // ZAPOREDNA VEZAVA
+  // ===========================================================
+
+  /** Sešteje upore — formula gre samo naprej */
+  function calcZap() {
+    const r1=v('zap-1'), r2=v('zap-2'), r3=v('zap-3'), r4=v('zap-4');
+    if (!ok(r1,r2)) return setR('zap-r','Vnesi vsaj R₁ in R₂!','',true);
+    let s = r1+r2;
+    if (!isNaN(r3)) s+=r3; // Prištej R3 če je vnesen
+    if (!isNaN(r4)) s+=r4; // Prištej R4 če je vnesen
+    setR('zap-r', fmt(s), ' Ω');
+  }
+
+  // ===========================================================
+  // VZPOREDNA VEZAVA
+  // ===========================================================
+
+  /** Izračuna skupni upor vzporedne vezave */
+  function calcVzp() {
+    const r1=v('vzp-1'), r2=v('vzp-2'), r3=v('vzp-3'), r4=v('vzp-4');
+    if (!ok(r1,r2)||r1===0||r2===0) return setR('vzp-r','Neveljavni podatki!','',true);
+    let inv = 1/r1 + 1/r2;  // Vsota recipročnih vrednosti
+    if (!isNaN(r3)&&r3!==0) inv += 1/r3;
+    if (!isNaN(r4)&&r4!==0) inv += 1/r4;
+    setR('vzp-r', fmt(1/inv), ' Ω');  // Skupni upor = 1 / vsota
+  }
+
+  // ===========================================================
+  // KONDENZATOR
+  // ===========================================================
+
+  /** Preklopi varianto kondenzatorja */
+  function kondSw(mode, btn) {
+    kondMode = mode; actSW(btn); setR('kond-r','—','');
+
+    if (mode==='Q'||mode==='E') {
+      // Naboj ali energija — C in U
+      setIn('kond-in', `
+        <div class="ig"><span class="il">Kapacitivnost C</span><input class="if" id="ko-C" type="number" placeholder="npr. 0.001"><span class="ub ub-b">F</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Napetost U</span><input class="if" id="ko-U" type="number" placeholder="npr. 12"><span class="ub ub-b">V</span></div>`);
+    } else {
+      // Reaktanca — C in f
+      setIn('kond-in', `
+        <div class="ig"><span class="il">Kapacitivnost C</span><input class="if" id="ko-C" type="number" placeholder="npr. 0.001"><span class="ub ub-b">F</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Frekvenca f</span><input class="if" id="ko-f" type="number" placeholder="npr. 50"><span class="ub ub-b">Hz</span></div>`);
+    }
+  }
+
+  /** Izračuna kondenzatorsko veličino */
+  function calcKond() {
+    const C=v('ko-C');
+    if (kondMode==='Q') {
+      const U=v('ko-U');
+      if (!ok(C,U)) return setR('kond-r','Neveljavni podatki!','',true);
+      setR('kond-r', fmt(C*U), ' C');           // Q = C · U
+    } else if (kondMode==='E') {
+      const U=v('ko-U');
+      if (!ok(C,U)) return setR('kond-r','Neveljavni podatki!','',true);
+      setR('kond-r', fmt(.5*C*U*U), ' J');      // E = ½ · C · U²
+    } else {
+      const f=v('ko-f');
+      if (!ok(C,f)||C===0||f===0) return setR('kond-r','Neveljavni podatki!','',true);
+      setR('kond-r', fmt(1/(2*Math.PI*f*C)), ' Ω'); // Xc = 1/(2πfC)
+    }
+  }
+
+  // ===========================================================
+  // TULJAVA
+  // ===========================================================
+
+  /** Preklopi varianto tuljave */
+  function tulSw(mode, btn) {
+    tulMode = mode; actSW(btn); setR('tul-r','—','');
+
+    if (mode==='E') {
+      // Energija — L in I
+      setIn('tul-in', `
+        <div class="ig"><span class="il">Induktivnost L</span><input class="if" id="tu-L" type="number" placeholder="npr. 0.1"><span class="ub ub-b">H</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Tok I</span><input class="if" id="tu-I" type="number" placeholder="npr. 2"><span class="ub ub-b">A</span></div>`);
+    } else {
+      // Reaktanca — L in f
+      setIn('tul-in', `
+        <div class="ig"><span class="il">Induktivnost L</span><input class="if" id="tu-L" type="number" placeholder="npr. 0.1"><span class="ub ub-b">H</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Frekvenca f</span><input class="if" id="tu-f" type="number" placeholder="npr. 50"><span class="ub ub-b">Hz</span></div>`);
+    }
+  }
+
+  /** Izračuna tuljavo */
+  function calcTul() {
+    const L=v('tu-L');
+    if (tulMode==='E') {
+      const I=v('tu-I');
+      if (!ok(L,I)) return setR('tul-r','Neveljavni podatki!','',true);
+      setR('tul-r', fmt(.5*L*I*I), ' J');      // E = ½ · L · I²
+    } else {
+      const f=v('tu-f');
+      if (!ok(L,f)) return setR('tul-r','Neveljavni podatki!','',true);
+      setR('tul-r', fmt(2*Math.PI*f*L), ' Ω'); // XL = 2π · f · L
+    }
+  }
+
+  // ===========================================================
+  // KCL — Kirchhoffov zakon tokov
+  // ===========================================================
+
+  /** Izračuna neznan tok iz KCL */
+  function calcKCL() {
+    const In=v('kcl-in'), i1=v('kcl-i1'), i2=v('kcl-i2');
+    if (!ok(In,i1,i2)) return setR('kcl-r','Neveljavni podatki!','',true);
+    setR('kcl-r', fmt(In-i1-i2), ' A');        // I_x = I_vhod - I1 - I2
+  }
+
+  // ===========================================================
+  // KVL — Kirchhoffov zakon napetosti
+  // ===========================================================
+
+  /** Izračuna neznano napetost iz KVL */
+  function calcKVL() {
+    const Uv=v('kvl-in'), u1=v('kvl-u1'), u2=v('kvl-u2');
+    if (!ok(Uv,u1,u2)) return setR('kvl-r','Neveljavni podatki!','',true);
+    setR('kvl-r', fmt(Uv-u1-u2), ' V');        // U_x = U_vir - U1 - U2
+  }
+
+  // ===========================================================
+  // NEWTONOV 2. ZAKON
+  // ===========================================================
+
+  /** Preklopi smer Newtonovega zakona */
+  function newtSw(mode, btn) {
+    newtMode = mode; actSW(btn, true); setR('newt-r','—','');
+
+    if (mode==='F') {
+      // F = m · a → vnesi m in a
+      setIn('newt-in', `
+        <div class="ig"><span class="il">Masa m</span><input class="if of" id="nw-m" type="number" placeholder="npr. 10"><span class="ub ub-o">kg</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Pospešek a</span><input class="if of" id="nw-a" type="number" placeholder="npr. 9.81"><span class="ub ub-o">m/s²</span></div>`);
+    } else if (mode==='m') {
+      // m = F / a → vnesi F in a
+      setIn('newt-in', `
+        <div class="ig"><span class="il">Sila F</span><input class="if of" id="nw-F" type="number" placeholder="npr. 100"><span class="ub ub-o">N</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Pospešek a</span><input class="if of" id="nw-a" type="number" placeholder="npr. 9.81"><span class="ub ub-o">m/s²</span></div>`);
+    } else {
+      // a = F / m → vnesi F in m
+      setIn('newt-in', `
+        <div class="ig"><span class="il">Sila F</span><input class="if of" id="nw-F" type="number" placeholder="npr. 100"><span class="ub ub-o">N</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Masa m</span><input class="if of" id="nw-m" type="number" placeholder="npr. 10"><span class="ub ub-o">kg</span></div>`);
+    }
+  }
+
+  /** Izračuna Newtonov zakon */
+  function calcNewt() {
+    if (newtMode==='F') {
+      const m=v('nw-m'), a=v('nw-a');
+      if (!ok(m,a)) return setR('newt-r','Neveljavni podatki!','',true);
+      setR('newt-r', fmt(m*a), ' N');            // F = m · a
+    } else if (newtMode==='m') {
+      const F=v('nw-F'), a=v('nw-a');
+      if (!ok(F,a)||a===0) return setR('newt-r','Neveljavni podatki!','',true);
+      setR('newt-r', fmt(F/a), ' kg');           // m = F / a
+    } else {
+      const F=v('nw-F'), m=v('nw-m');
+      if (!ok(F,m)||m===0) return setR('newt-r','Neveljavni podatki!','',true);
+      setR('newt-r', fmt(F/m), ' m/s²');         // a = F / m
+    }
+  }
+
+  // ===========================================================
+  // NAVOR
+  // ===========================================================
+
+  /** Preklopi smer navora */
+  function navorSw(mode, btn) {
+    navorMode = mode; actSW(btn, true); setR('navor-r','—','');
+
+    if (mode==='M') {
+      setIn('navor-in', `
+        <div class="ig"><span class="il">Sila F</span><input class="if of" id="na-F" type="number" placeholder="npr. 50"><span class="ub ub-o">N</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Ročica r</span><input class="if of" id="na-r" type="number" placeholder="npr. 0.3"><span class="ub ub-o">m</span></div>`);
+    } else if (mode==='F') {
+      setIn('navor-in', `
+        <div class="ig"><span class="il">Navor M</span><input class="if of" id="na-M" type="number" placeholder="npr. 15"><span class="ub ub-o">N·m</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Ročica r</span><input class="if of" id="na-r" type="number" placeholder="npr. 0.3"><span class="ub ub-o">m</span></div>`);
+    } else {
+      setIn('navor-in', `
+        <div class="ig"><span class="il">Navor M</span><input class="if of" id="na-M" type="number" placeholder="npr. 15"><span class="ub ub-o">N·m</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Sila F</span><input class="if of" id="na-F" type="number" placeholder="npr. 50"><span class="ub ub-o">N</span></div>`);
+    }
+  }
+
+  /** Izračuna navor, silo ali ročico */
+  function calcNavor() {
+    if (navorMode==='M') {
+      const F=v('na-F'), r=v('na-r');
+      if (!ok(F,r)) return setR('navor-r','Neveljavni podatki!','',true);
+      setR('navor-r', fmt(F*r), ' N·m');         // M = F · r
+    } else if (navorMode==='F') {
+      const M=v('na-M'), r=v('na-r');
+      if (!ok(M,r)||r===0) return setR('navor-r','Neveljavni podatki!','',true);
+      setR('navor-r', fmt(M/r), ' N');            // F = M / r
+    } else {
+      const M=v('na-M'), F=v('na-F');
+      if (!ok(M,F)||F===0) return setR('navor-r','Neveljavni podatki!','',true);
+      setR('navor-r', fmt(M/F), ' m');            // r = M / F
+    }
+  }
+
+  // ===========================================================
+  // KINEMATIKA
+  // ===========================================================
+
+  /** Preklopi varianto kinematike */
+  function kinSw(mode, btn) {
+    kinMode = mode; actSW(btn, true); setR('kin-r','—','');
+
+    if (mode==='v'||mode==='s') {
+      // v ali s — vnesi v0, a, t
+      setIn('kin-in', `
+        <div class="ig"><span class="il">Začetna hitrost v₀</span><input class="if of" id="ki-v0" type="number" placeholder="npr. 0"><span class="ub ub-o">m/s</span></div>
+        <div class="ig"><span class="il">Pospešek a</span><input class="if of" id="ki-a" type="number" placeholder="npr. 2"><span class="ub ub-o">m/s²</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Čas t</span><input class="if of" id="ki-t" type="number" placeholder="npr. 5"><span class="ub ub-o">s</span></div>`);
+    } else {
+      // a — vnesi v0, vf, t
+      setIn('kin-in', `
+        <div class="ig"><span class="il">Začetna hitrost v₀</span><input class="if of" id="ki-v0" type="number" placeholder="npr. 0"><span class="ub ub-o">m/s</span></div>
+        <div class="ig"><span class="il">Končna hitrost v</span><input class="if of" id="ki-vf" type="number" placeholder="npr. 20"><span class="ub ub-o">m/s</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Čas t</span><input class="if of" id="ki-t" type="number" placeholder="npr. 5"><span class="ub ub-o">s</span></div>`);
+    }
+  }
+
+  /** Izračuna kinematično veličino */
+  function calcKin() {
+    if (kinMode==='v') {
+      const v0=v('ki-v0'), a=v('ki-a'), t=v('ki-t');
+      if (!ok(v0,a,t)) return setR('kin-r','Neveljavni podatki!','',true);
+      setR('kin-r', fmt(v0+a*t), ' m/s');        // v = v₀ + a·t
+    } else if (kinMode==='s') {
+      const v0=v('ki-v0'), a=v('ki-a'), t=v('ki-t');
+      if (!ok(v0,a,t)) return setR('kin-r','Neveljavni podatki!','',true);
+      setR('kin-r', fmt(v0*t+.5*a*t*t), ' m');  // s = v₀t + ½at²
+    } else {
+      const v0=v('ki-v0'), vf=v('ki-vf'), t=v('ki-t');
+      if (!ok(v0,vf,t)||t===0) return setR('kin-r','Neveljavni podatki!','',true);
+      setR('kin-r', fmt((vf-v0)/t), ' m/s²');    // a = (v−v₀)/t
+    }
+  }
+
+  // ===========================================================
+  // PROSTA PADAVINA
+  // ===========================================================
+
+  /** Preklopi varianto proste padavine */
+  function padSw(mode, btn) {
+    padMode = mode; actSW(btn, true); setR('pad-r','—','');
+
+    if (mode==='h'||mode==='v') {
+      // Višina ali hitrost — vnesi čas t
+      setIn('pad-in', `
+        <div class="ig" style="margin-bottom:20px"><span class="il">Čas padca t</span><input class="if of" id="pa-t" type="number" placeholder="npr. 3"><span class="ub ub-o">s</span></div>`);
+    } else {
+      // Čas — vnesi višino h
+      setIn('pad-in', `
+        <div class="ig" style="margin-bottom:20px"><span class="il">Višina padca h</span><input class="if of" id="pa-h" type="number" placeholder="npr. 44.1"><span class="ub ub-o">m</span></div>`);
+    }
+  }
+
+  /** Izračuna prosto padavino */
+  function calcPad() {
+    const g=9.81; // Gravitacijski pospešek Zemlja
+    if (padMode==='h') {
+      const t=v('pa-t');
+      if (!ok(t)) return setR('pad-r','Vnesi čas t!','',true);
+      setR('pad-r', fmt(.5*g*t*t), ' m');         // h = ½·g·t²
+    } else if (padMode==='v') {
+      const t=v('pa-t');
+      if (!ok(t)) return setR('pad-r','Vnesi čas t!','',true);
+      setR('pad-r', fmt(g*t), ' m/s');             // v = g·t
+    } else {
+      const h=v('pa-h');
+      if (!ok(h)||h<0) return setR('pad-r','Neveljavni podatki!','',true);
+      setR('pad-r', fmt(Math.sqrt(2*h/g)), ' s');  // t = √(2h/g)
+    }
+  }
+
+  // ===========================================================
+  // KINETIČNA ENERGIJA
+  // ===========================================================
+
+  /** Preklopi varianto kinetične energije */
+  function ekSw(mode, btn) {
+    ekMode = mode; actSW(btn, true); setR('ek-r','—','');
+
+    if (mode==='Ek') {
+      // E_k = ½·m·v² → vnesi m in v
+      setIn('ek-in', `
+        <div class="ig"><span class="il">Masa m</span><input class="if of" id="ek-m" type="number" placeholder="npr. 5"><span class="ub ub-o">kg</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Hitrost v</span><input class="if of" id="ek-v" type="number" placeholder="npr. 10"><span class="ub ub-o">m/s</span></div>`);
+    } else if (mode==='v') {
+      // v = √(2E/m) → vnesi E in m
+      setIn('ek-in', `
+        <div class="ig"><span class="il">Energija E_k</span><input class="if of" id="ek-E" type="number" placeholder="npr. 250"><span class="ub ub-o">J</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Masa m</span><input class="if of" id="ek-m" type="number" placeholder="npr. 5"><span class="ub ub-o">kg</span></div>`);
+    } else {
+      // m = 2E/v² → vnesi E in v
+      setIn('ek-in', `
+        <div class="ig"><span class="il">Energija E_k</span><input class="if of" id="ek-E" type="number" placeholder="npr. 250"><span class="ub ub-o">J</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Hitrost v</span><input class="if of" id="ek-v" type="number" placeholder="npr. 10"><span class="ub ub-o">m/s</span></div>`);
+    }
+  }
+
+  /** Izračuna kinetično energijo */
+  function calcEk() {
+    if (ekMode==='Ek') {
+      const m=v('ek-m'), vel=v('ek-v');
+      if (!ok(m,vel)) return setR('ek-r','Neveljavni podatki!','',true);
+      setR('ek-r', fmt(.5*m*vel*vel), ' J');          // E_k = ½·m·v²
+    } else if (ekMode==='v') {
+      const E=v('ek-E'), m=v('ek-m');
+      if (!ok(E,m)||m===0||E<0) return setR('ek-r','Neveljavni podatki!','',true);
+      setR('ek-r', fmt(Math.sqrt(2*E/m)), ' m/s');    // v = √(2E/m)
+    } else {
+      const E=v('ek-E'), vel=v('ek-v');
+      if (!ok(E,vel)||vel===0||E<0) return setR('ek-r','Neveljavni podatki!','',true);
+      setR('ek-r', fmt(2*E/(vel*vel)), ' kg');         // m = 2E/v²
+    }
+  }
+
+  // ===========================================================
+  // POTENCIALNA ENERGIJA
+  // ===========================================================
+
+  /** Preklopi varianto potencialne energije */
+  function epSw(mode, btn) {
+    epMode = mode; actSW(btn, true); setR('ep-r','—','');
+
+    if (mode==='Ep') {
+      // E_p = m·g·h → vnesi m in h
+      setIn('ep-in', `
+        <div class="ig"><span class="il">Masa m</span><input class="if of" id="ep-m" type="number" placeholder="npr. 10"><span class="ub ub-o">kg</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Višina h</span><input class="if of" id="ep-h" type="number" placeholder="npr. 5"><span class="ub ub-o">m</span></div>`);
+    } else if (mode==='h') {
+      // h = E/(m·g) → vnesi E in m
+      setIn('ep-in', `
+        <div class="ig"><span class="il">Energija E_p</span><input class="if of" id="ep-E" type="number" placeholder="npr. 490"><span class="ub ub-o">J</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Masa m</span><input class="if of" id="ep-m" type="number" placeholder="npr. 10"><span class="ub ub-o">kg</span></div>`);
+    } else {
+      // m = E/(g·h) → vnesi E in h
+      setIn('ep-in', `
+        <div class="ig"><span class="il">Energija E_p</span><input class="if of" id="ep-E" type="number" placeholder="npr. 490"><span class="ub ub-o">J</span></div>
+        <div class="ig" style="margin-bottom:20px"><span class="il">Višina h</span><input class="if of" id="ep-h" type="number" placeholder="npr. 5"><span class="ub ub-o">m</span></div>`);
+    }
+  }
+
+  /** Izračuna potencialno energijo */
+  function calcEp() {
+    const g=9.81; // Gravitacijski pospešek
+    if (epMode==='Ep') {
+      const m=v('ep-m'), h=v('ep-h');
+      if (!ok(m,h)) return setR('ep-r','Neveljavni podatki!','',true);
+      setR('ep-r', fmt(m*g*h), ' J');              // E_p = m·g·h
+    } else if (epMode==='h') {
+      const E=v('ep-E'), m=v('ep-m');
+      if (!ok(E,m)||m===0) return setR('ep-r','Neveljavni podatki!','',true);
+      setR('ep-r', fmt(E/(m*g)), ' m');             // h = E / (m·g)
+    } else {
+      const E=v('ep-E'), h=v('ep-h');
+      if (!ok(E,h)||h===0) return setR('ep-r','Neveljavni podatki!','',true);
+      setR('ep-r', fmt(E/(g*h)), ' kg');            // m = E / (g·h)
+    }
+  }
+
+  // ===========================================================
+  // INICIALIZACIJA — zažene se takoj ob nalaganju strani
+  // ===========================================================
+
+  // Inicializiramo vsa dinamična vnosna polja z začetnimi vrednostmi
+  ohmSw ('U',  document.querySelector('#e-ohm  .sw'));
+  mocSw ('UI', document.querySelector('#e-moc  .sw'));
+  kondSw('Q',  document.querySelector('#e-kond .sw'));
+  tulSw ('E',  document.querySelector('#e-tul  .sw'));
+  newtSw('F',  document.querySelector('#m-newton .sw'));
+  navorSw('M', document.querySelector('#m-navor  .sw'));
+  kinSw ('v',  document.querySelector('#m-kin    .sw'));
+  padSw ('h',  document.querySelector('#m-pad    .sw'));
+  ekSw  ('Ek', document.querySelector('#m-ek     .sw'));
+  epSw  ('Ep', document.querySelector('#m-ep     .sw'));
+
+  // Pokažemo landing stran kot začetek
+  showPage('landing');
+
+</script>
+
+<!-- ============================================================
+     AI CHAT WIDGET — floating assistant
+============================================================ -->
+<style>
+  /* Floating gumb za odprtje chata */
+  #chat-fab {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    z-index: 999;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), #6366f1);
+    border: none; cursor: pointer;
+    box-shadow: 0 4px 24px rgba(59,130,246,.45);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    transition: transform .2s, box-shadow .2s;
+  }
+  #chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(59,130,246,.6); }
+
+  /* Rdeča pikica — nova sporočila */
+  #chat-dot {
+    position: absolute; top: 4px; right: 4px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #ef4444; border: 2px solid var(--bg);
+    display: none;
+  }
+
+  /* Chat okno */
+  #chat-box {
+    position: fixed;
+    bottom: 100px; right: 28px;
+    z-index: 998;
+    width: 360px; max-width: calc(100vw - 40px);
+    height: 500px; max-height: calc(100vh - 140px);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    overflow: hidden;
+    opacity: 0; pointer-events: none;
+    transform: translateY(16px) scale(.97);
+    transition: opacity .22s ease, transform .22s ease;
+  }
+  #chat-box.open {
+    opacity: 1; pointer-events: all;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Glava chat okna */
+  .chat-head {
+    padding: 16px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .chat-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), #6366f1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .chat-head-info { flex: 1; }
+  .chat-head-name { font-weight: 600; font-size: .9rem; color: #fff; }
+  .chat-head-status {
+    font-size: .72rem; color: var(--green);
+    font-family: var(--mono); margin-top: 1px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .chat-head-status::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--green); display: inline-block;
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+  .chat-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); font-size: 1.1rem; padding: 4px;
+    transition: color .15s;
+  }
+  .chat-close:hover { color: var(--text); }
+
+  /* Sporočila */
+  .chat-msgs {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    scroll-behavior: smooth;
+  }
+  .chat-msgs::-webkit-scrollbar { width: 4px; }
+  .chat-msgs::-webkit-scrollbar-track { background: transparent; }
+  .chat-msgs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* Posamezno sporočilo */
+  .msg {
+    display: flex; flex-direction: column; max-width: 88%;
+    animation: fadeUp .2s ease both;
+  }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot  { align-self: flex-start; align-items: flex-start; }
+
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 14px;
+    font-size: .86rem; line-height: 1.55;
+  }
+  .msg.user .msg-bubble {
+    background: var(--blue);
+    color: #fff; border-bottom-right-radius: 4px;
+  }
+  .msg.bot .msg-bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text); border-bottom-left-radius: 4px;
+  }
+  .msg-time {
+    font-size: .68rem; color: var(--text3);
+    font-family: var(--mono); margin-top: 3px; padding: 0 4px;
+  }
+
+  /* Pisanje animacija (3 pike) */
+  .typing-bubble {
+    display: flex; gap: 4px; align-items: center;
+    padding: 12px 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 14px; border-bottom-left-radius: 4px;
+    width: fit-content;
+  }
+  .typing-bubble span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text3); display: inline-block;
+    animation: typingDot 1.2s infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: .2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: .4s; }
+  @keyframes typingDot {
+    0%,60%,100% { transform: translateY(0); opacity: .4; }
+    30%          { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Vnosna vrstica */
+  .chat-input-wrap {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: flex-end;
+    flex-shrink: 0; background: var(--surface2);
+  }
+  #chat-input {
+    flex: 1; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: .86rem;
+    outline: none; resize: none; max-height: 100px;
+    transition: border-color .2s; line-height: 1.4;
+  }
+  #chat-input:focus { border-color: var(--blue); }
+  #chat-input::placeholder { color: var(--text3); }
+
+  #chat-send {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--blue); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem; flex-shrink: 0;
+    transition: background .2s, transform .15s;
+  }
+  #chat-send:hover { background: #2563eb; transform: scale(1.05); }
+  #chat-send:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+  /* Predlagana vprašanja */
+  .chat-suggestions {
+    padding: 0 16px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .sug-label { font-size: .7rem; color: var(--text3); font-family: var(--mono); margin-bottom: 2px; }
+  .sug-btn {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px;
+    color: var(--text2); font-size: .78rem;
+    cursor: pointer; text-align: left;
+    transition: all .15s; font-family: 'DM Sans', sans-serif;
+  }
+  .sug-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-glow); }
+</style>
+
+<!-- Floating gumb -->
+<button id="chat-fab" onclick="toggleChat()" title="Vprašaj AI asistenta">
+  💬
+  <div id="chat-dot"></div>
+</button>
+
+<!-- Chat okno -->
+<div id="chat-box">
+  <!-- Glava -->
+  <div class="chat-head">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-head-info">
+      <div class="chat-head-name">TehnoBot</div>
+      <div class="chat-head-status">Na voljo</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <!-- Sporočila -->
+  <div class="chat-msgs" id="chat-msgs"></div>
+
+  <!-- Predlagana vprašanja (vidna samo na začetku) -->
+  <div class="chat-suggestions" id="chat-sugs">
+    <div class="sug-label">Pogosta vprašanja:</div>
+    <button class="sug-btn" onclick="sendSuggestion(this)">Kako deluje Ohmov zakon?</button>
+    <button class="sug-btn" onclick="sendSuggestion(this)">Razloži mi Newton-ove zakone</button>
+    <button class="sug-btn" onclick="sendSuggestion(this)">Kaj je kinetična energija?</button>
+    <button class="sug-btn" onclick="sendSuggestion(this)">Kako izračunam električno moč?</button>
+  </div>
+
+  <!-- Vnosna vrstica -->
+  <div class="chat-input-wrap">
+    <textarea id="chat-input" placeholder="Vprašaj o elektrotehniki ali mehaniki..." rows="1"
+      onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="chat-send" onclick="sendMessage()" title="Pošlji">➤</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CHAT WIDGET — logika
+// ============================================================
+
+let chatOpen = false;
+let chatHistory = []; // Celotna zgodovina za multi-turn
+let chatBotReady = true;
+
+// Pozdravno sporočilo ob prvem odprtju
+let chatGreeted = false;
+
+/** Preklopi vidnost chat okna */
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const box = document.getElementById('chat-box');
+  const dot = document.getElementById('chat-dot');
+  box.classList.toggle('open', chatOpen);
+  dot.style.display = 'none';
+
+  if (chatOpen && !chatGreeted) {
+    chatGreeted = true;
+    setTimeout(() => {
+      addBotMsg('Živjo! 👋 Sem **TehnoBot**, tvoj AI asistent za elektrotehniko in mehaniko.\n\nVprašaj me karkoli — od Ohmovega zakona do kinematike. Pomagal ti bom razumeti formule in koncepte! ⚡⚙️');
+    }, 300);
+  }
+
+  if (chatOpen) {
+    setTimeout(() => document.getElementById('chat-input').focus(), 350);
+  }
+}
+
+/** Klik na predlagano vprašanje */
+function sendSuggestion(btn) {
+  const text = btn.textContent;
+  // Skrij predloge
+  document.getElementById('chat-sugs').style.display = 'none';
+  sendMessage(text);
+}
+
+/** Samodejno prilagajanje višine textarea */
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+/** Enter = pošlji, Shift+Enter = nova vrstica */
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+/** Doda sporočilo uporabnika v UI */
+function addUserMsg(text) {
+  const msgs = document.getElementById('chat-msgs');
+  const time = new Date().toLocaleTimeString('sl-SI', {hour:'2-digit', minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="msg-bubble">${escHtml(text)}</div><div class="msg-time">${time}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/** Doda bot sporočilo z Markdown podporo */
+function addBotMsg(text) {
+  const msgs = document.getElementById('chat-msgs');
+  const time = new Date().toLocaleTimeString('sl-SI', {hour:'2-digit', minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="msg-bubble">${renderMd(text)}</div><div class="msg-time">TehnoBot · ${time}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/** Pokaže pisanje animacijo */
+function showTyping() {
+  const msgs = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="typing-bubble"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/** Skrije pisanje animacijo */
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+/** Preprosta Markdown → HTML konverzija */
+function renderMd(text) {
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:rgba(59,130,246,.15);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:.82em">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+/** HTML escape za varnost */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/** Glavna funkcija pošiljanja sporočila */
+async function sendMessage(overrideText) {
+  if (!chatBotReady) return;
+
+  const input = document.getElementById('chat-input');
+  const text = (overrideText || input.value).trim();
+  if (!text) return;
+
+  // Skrij predloge ob prvem sporočilu
+  document.getElementById('chat-sugs').style.display = 'none';
+
+  // Počisti vnosno polje
+  input.value = ''; input.style.height = 'auto';
+
+  // Prikaži sporočilo uporabnika
+  addUserMsg(text);
+
+  // Onemogoči gumb med odgovorom
+  chatBotReady = false;
+  document.getElementById('chat-send').disabled = true;
+
+  // Dodaj v zgodovino
+  chatHistory.push({ role: 'user', content: text });
+
+  // Pokaži tipkanje
+  showTyping();
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Si TehnoBot — strokoven in prijazen AI asistent za elektrotehniko in mehaniko, vgrajen v TehnoKalk (slovenski inženirski kalkulator).
+
+TVOJE PODROČJE: Odgovarjaš SAMO na vprašanja o:
+- Elektrotehniki: Ohmov zakon, električna moč, kondenzatorji, tuljave, tokokrogi, napetost, tok, upor
+- Mehaniki: Newtonovi zakoni, navor, kinematika, prosta padavina, kinetična in potencialna energija, sila, masa, pospešek
+
+JEZIK: Vedno odgovarjaj v slovenščini.
+
+SLOG: 
+- Kratki, jasni odgovori (3-6 stavkov za splošna vprašanja)
+- Pokažeš formulo kadar je relevantna (npr. \`U = R · I\`)
+- Prijazen, a strokoven ton
+- Kadar je vprašanje izven področja, prijazno usmeriš nazaj: "To je zunaj mojega področja — vprašaj me o elektrotehniki ali mehaniki! ⚡"`,
+        messages: chatHistory
+      })
+    });
+
+    const data = await response.json();
+    hideTyping();
+
+    if (data.content && data.content[0]) {
+      const botText = data.content[0].text;
+      chatHistory.push({ role: 'assistant', content: botText });
+      addBotMsg(botText);
+    } else {
+      addBotMsg('Ups, prišlo je do napake. Poskusi znova! 🔧');
+      chatHistory.pop(); // Odstrani neuspešno sporočilo iz zgodovine
+    }
+
+  } catch (err) {
+    hideTyping();
+    addBotMsg('Napaka pri povezavi. Preveri internet in poskusi znova.');
+    chatHistory.pop();
+  }
+
+  // Ponovno omogoči gumb
+  chatBotReady = true;
+  document.getElementById('chat-send').disabled = false;
+  if (!overrideText) input.focus();
+}
+</script>
+</body>
+</html>
