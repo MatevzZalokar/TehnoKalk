@@ -1958,21 +1958,19 @@ async function sendMessage(overrideText) {
   // Pokaži tipkanje
   showTyping();
 
-  try {
+ try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-        headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': 'sk-ant-api03-3IT...CQAA',
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-},
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'sk-ant-api03-3IT...CQAA',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         system: `Si TehnoBot — strokoven in prijazen AI asistent za elektrotehniko in mehaniko, vgrajen v TehnoKalk (slovenski inženirski kalkulator).
-
 TVOJE PODROČJE: Odgovarjaš SAMO na vprašanja o:
 - Elektrotehniki: Ohmov zakon, električna moč, kondenzatorji, tuljave, tokokrogi, napetost, tok, upor
 - Mehaniki: Newtonovi zakoni, navor, kinematika, prosta padavina, kinetična in potencialna energija, sila, masa, pospešek
